@@ -32,7 +32,7 @@ namespace EngineLayer.Indexing
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, TargetContaminantAmbiguity tcAmbiguity, List<string> nestedIds)
             : base(commonParams, fileSpecificParameters, nestedIds)
         {
@@ -195,7 +195,17 @@ namespace EngineLayer.Indexing
                 }
             }
 
-            return new IndexingResults(peptides, fragmentIndex, precursorIndex, this);
+            int[][] fragmentIndexArray = new int[fragmentIndex.Length][];
+
+            for (int i = 0; i < fragmentIndex.Length; i++)
+            {
+                if (fragmentIndex[i] != null)
+                {
+                    fragmentIndexArray[i] = fragmentIndex[i].ToArray();
+                }
+            }
+
+            return new IndexingResults(peptides, fragmentIndexArray, precursorIndex, this);
         }
 
         private List<int>[] CreateNewPrecursorIndex(List<PeptideWithSetModifications> peptidesSortedByMass)
@@ -259,7 +269,7 @@ namespace EngineLayer.Indexing
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
                 Product fragmentAtIndex = fragmentMasses.Where(x => x.FragmentNumber == fragmentNumber).FirstOrDefault();
-                double basePrecursorMass = fragmentAtIndex.NeutralMass == default(Product).NeutralMass ? 
+                double basePrecursorMass = fragmentAtIndex.NeutralMass == default(Product).NeutralMass ?
                     peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
 
                 foreach (Modification mod in relevantDatabaseMod.Value)

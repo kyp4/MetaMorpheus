@@ -222,7 +222,7 @@ namespace TaskLayer
                         var indexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                             SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, currentPartition, SearchParameters.DecoyType, combinedParams, FileSpecificParameters,
                             SearchParameters.MaxFragmentSize, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), SearchParameters.TCAmbiguity, new List<string> { taskId });
-                        List<int>[] fragmentIndex = null;
+                        int[][] fragmentIndex = null;
                         List<int>[] precursorIndex = null;
 
                         lock (indexLock)
@@ -292,7 +292,7 @@ namespace TaskLayer
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
                                 ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
 
-                            List<int>[] fragmentIndex = null;
+                            int[][] fragmentIndex = null;
                             List<int>[] precursorIndex = null;
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });

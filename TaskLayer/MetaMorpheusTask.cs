@@ -30,6 +30,8 @@ namespace TaskLayer
 
     public abstract class MetaMorpheusTask
     {
+        private static readonly int IndexLineSize = 1048576;
+
         public static readonly TomlSettings tomlConfig = TomlSettings.Create(cfg => cfg
             .ConfigureType<Tolerance>(type => type
                 .WithConversionFor<TomlString>(convert => convert
@@ -410,7 +412,7 @@ namespace TaskLayer
             FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)>();
 
             MetaMorpheusEngine.FinishedSingleEngineHandler += SingleEngineHandlerInTask;
-            try
+            //try
             {
                 var stopWatch = new Stopwatch();
                 stopWatch.Start();
@@ -459,24 +461,24 @@ namespace TaskLayer
                 FinishedWritingFile(resultsFileName, new List<string> { displayName });
                 FinishedSingleTask(displayName);
             }
-            catch (Exception e)
-            {
-                MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
-                var resultsFileName = Path.Combine(output_folder, "results.txt");
-                e.Data.Add("folder", output_folder);
-                using (StreamWriter file = new StreamWriter(resultsFileName))
-                {
-                    file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
-                    file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
-                    file.Write("e: " + e);
-                    file.Write("e.Message: " + e.Message);
-                    file.Write("e.InnerException: " + e.InnerException);
-                    file.Write("e.Source: " + e.Source);
-                    file.Write("e.StackTrace: " + e.StackTrace);
-                    file.Write("e.TargetSite: " + e.TargetSite);
-                }
-                throw;
-            }
+            //catch (Exception e)
+            //{
+            //    MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
+            //    var resultsFileName = Path.Combine(output_folder, "results.txt");
+            //    e.Data.Add("folder", output_folder);
+            //    using (StreamWriter file = new StreamWriter(resultsFileName))
+            //    {
+            //        file.WriteLine(GlobalVariables.MetaMorpheusVersion.Equals("1.0.0.0") ? "MetaMorpheus: Not a release version" : "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion);
+            //        file.WriteLine(SystemInfo.CompleteSystemInfo()); //OS, OS Version, .Net Version, RAM, processor count, MSFileReader .dll versions X3
+            //        file.Write("e: " + e);
+            //        file.Write("e.Message: " + e.Message);
+            //        file.Write("e.InnerException: " + e.InnerException);
+            //        file.Write("e.Source: " + e.Source);
+            //        file.Write("e.StackTrace: " + e.StackTrace);
+            //        file.Write("e.TargetSite: " + e.TargetSite);
+            //    }
+            //    throw;
+            //}
 
             {
                 var proseFilePath = Path.Combine(output_folder, "prose.txt");
@@ -723,26 +725,136 @@ namespace TaskLayer
             return digestionParams;
         }
 
-        private static void WriteFragmentIndex(List<int>[] fragmentIndex, string fragmentIndexFileName)
+        private static void WriteFragmentIndex(int[][] fragmentIndex, string fragmentIndexFilePath)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            var headerFilePath = Path.Combine(Path.GetDirectoryName(fragmentIndexFilePath), "FragmentIndexHeader.header");
 
-            using (var file = File.Create(fragmentIndexFileName))
+            // write fragment index header
+            using (var stream = new FileStream(headerFilePath, FileMode.Create))
             {
-                ser.Serialize(file, fragmentIndex);
+                using (var writer = new BinaryWriter(stream))
+                {
+                    for (int i = 0; i < fragmentIndex.Length; i++)
+                    {
+                        var bin = fragmentIndex[i];
+
+                        if (bin != null)
+                        {
+                            writer.Write(bin.Length);
+                        }
+                        else
+                        {
+                            writer.Write(0);
+                        }
+                    }
+                }
+            }
+
+            // write fragment index
+            using (var stream = new FileStream(fragmentIndexFilePath, FileMode.Create))
+            {
+                using (var writer = new BinaryWriter(stream))
+                {
+                    for (int i = 0; i < fragmentIndex.Length; i++)
+                    {
+                        var bin = fragmentIndex[i];
+
+                        if (bin != null)
+                        {
+                            for (int j = 0; j < bin.Length; j++)
+                            {
+                                writer.Write(bin[j]); // peptide ID number
+                            }
+                        }
+
+                        writer.Write(-1); // end of the bin
+                    }
+                }
             }
         }
 
-        private static List<int>[] ReadFragmentIndex(string fragmentIndexFileName)
+        private static int[][] ReadFragmentIndex(string fragmentIndexFilePath)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            int indexSize = 30000001;
+            int[][] fragmentIndex = new int[indexSize][];
 
-            using (var file = File.OpenRead(fragmentIndexFileName))
+            Stopwatch s = new Stopwatch();
+            List<string> output = new List<string>();
+            s.Start();
+
+            // read the header
+            var headerFilePath = Path.Combine(Path.GetDirectoryName(fragmentIndexFilePath), "FragmentIndexHeader.header");
+            using (var stream = new FileStream(headerFilePath, FileMode.Open))
             {
-                return (List<int>[])ser.Deserialize(file);
+                var bufferedReader = new BufferedBinaryReader(stream, IndexLineSize);
+                var binNumber = 0;
+
+                while (bufferedReader.FillBuffer())
+                {
+                    for (var numReads = bufferedReader.NumBytesAvailable / sizeof(int); numReads > 0; numReads--)
+                    {
+                        // the value read from the file
+                        int val = bufferedReader.ReadInt32();
+
+                        if (val != 0)
+                        {
+                            fragmentIndex[binNumber] = new int[val];
+                        }
+
+                        binNumber++;
+                    }
+                }
             }
+
+            s.Stop();
+            output.Add(s.ElapsedMilliseconds.ToString());
+            s.Reset();
+            s.Start();
+
+            // read the fragment index
+            using (var stream = new FileStream(fragmentIndexFilePath, FileMode.Open))
+            {
+                var bufferedReader = new BufferedBinaryReader(stream, IndexLineSize);
+
+                var binNumber = 0;
+                int[] currentBin = null;
+                int p = 0;
+
+                while (bufferedReader.FillBuffer())
+                {
+                    for (var numReads = bufferedReader.NumBytesAvailable / sizeof(int); numReads > 0; numReads--)
+                    {
+                        int val = bufferedReader.ReadInt32();
+
+                        if (val == -1)
+                        {
+                            p = 0;
+                            binNumber++;
+                            currentBin = fragmentIndex[binNumber];
+                        }
+                        else
+                        {
+                            currentBin[p] = val;
+                            p++;
+                        }
+                    }
+                }
+            }
+
+            s.Stop();
+            output.Add(s.ElapsedMilliseconds.ToString());
+
+            File.WriteAllLines(@"C:\Data\Yeast\timer.txt", output);
+
+            return fragmentIndex;
+
+            //var messageTypes = GetSubclassesAndItself(typeof(List<int>[]));
+            //var ser = new NetSerializer.Serializer(messageTypes);
+
+            //using (var file = File.OpenRead(fragmentIndexFileName))
+            //{
+            //    return (List<int>[])ser.Deserialize(file);
+            //}
         }
 
         private static string GetExistingFolderWithIndices(IndexingEngine indexEngine, List<DbForTask> dbFilenameList)
@@ -810,14 +922,14 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref int[][] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
 
             if (pathToFolderWithIndices != null) //if indexes exist
             {
-                try
+                //try
                 {
                     Status("Reading peptide index...", new List<string> { taskId });
                     peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
@@ -828,20 +940,20 @@ namespace TaskLayer
                     if (indexEngine.GeneratePrecursorIndex)
                     {
                         Status("Reading precursor index...", new List<string> { taskId });
-                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                        //precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
                     }
 
                     successfullyReadIndices = true;
                 }
-                catch
-                {
-                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+                //catch
+                //{
+                //    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
 
-                    // if the old index couldn't be read, a new one will be generated.
+                //    // if the old index couldn't be read, a new one will be generated.
 
-                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
-                    // that wasn't written by old versions.
-                }
+                //    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                //    // that wasn't written by old versions.
+                //}
             }
 
             if (!successfullyReadIndices) //if we didn't find indexes with the same params
@@ -873,13 +985,13 @@ namespace TaskLayer
                 {
                     Status("Writing precursor index...", new List<string> { taskId });
                     var precursorIndexFile = Path.Combine(output_folderForIndices, PrecursorIndexFileName);
-                    WriteFragmentIndex(precursorIndex, precursorIndexFile);
+                    //WriteFragmentIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref int[][] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
