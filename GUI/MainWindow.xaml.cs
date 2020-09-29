@@ -18,6 +18,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace MetaMorpheusGUI
 {
@@ -38,6 +39,7 @@ namespace MetaMorpheusGUI
         public MainWindow()
         {
             InitializeComponent();
+            Loaders.LoadElements();
 
             Title = "MetaMorpheus: version " + GlobalVariables.MetaMorpheusVersion;
 
