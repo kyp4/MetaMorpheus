@@ -419,6 +419,7 @@ namespace TaskLayer
         }
 
         public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> items, string filePath, int writeType)
+        
         {
             if (items.Count == 0)
             {
@@ -476,6 +477,25 @@ namespace TaskLayer
             }
         }
 
+        public static void WriteSeenProteinGlycoLocalizationUnique(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        {
+            if (glycoProteinParsimony.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Test\tTest2");
+                foreach (var item in glycoProteinParsimony.OrderBy(p => p.Key))
+                {
+                    var x = item.Key.Split('-');
+                    output.WriteLine(
+                        x[0] + "\t" +
+                        x[1]
+                        );
+                }
+            }
+        }
+
         //The function is to summarize localized glycosylation of each protein site. 
         public static void WriteProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
@@ -514,6 +534,57 @@ namespace TaskLayer
                         );
                 }
             }
+
+
+            //new output
+
+            
         }
+
+        public static void GlycoMassSummaryTSV(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        {
+            if (glycoProteinParsimony.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycans\tLocalized");
+                foreach (var item in glycoProteinParsimony.OrderBy(p => p.Key))
+                {
+                    var x = item.Key.Split('-');
+                    output.WriteLine(
+                        x[0] + "\t" +
+                        x[1] + "\t" +
+                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
+                        item.Value.IsLocalized +
+                        item.Value.ProteinAccession
+                        );
+                }
+            }
+        }
+      /*
+        public static void GlycoUniqueSummaryTSV(List<var> psmList, string outputPath)
+        {
+            if (psmList.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycans\tLocalized");
+                foreach (var item in psmList.OrderBy(p => p.Key))
+                {
+                    var x = item.Key.Split('-');
+                    output.WriteLine(
+                        x[0] + "\t" +
+                        x[1] + "\t" +
+                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
+                        item.Value.IsLocalized
+                        );
+                }
+            }
+        }
+      */
+
+
     }
 }

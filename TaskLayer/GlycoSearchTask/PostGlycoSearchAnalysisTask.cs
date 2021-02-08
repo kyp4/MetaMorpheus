@@ -38,6 +38,16 @@ namespace TaskLayer
                 WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileNGlyco, 3);
                 FinishedWritingFile(writtenFileNGlyco, new List<string> { taskId });
 
+                //new
+                var nglycoMass = allPsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.ScanPrecursorMass).ToList();
+                SingleFDRAnalysis(nglycoMass, commonParameters, new List<string> { taskId });
+
+                var nglycoMass_write = Path.Combine(OutputFolder, "nglyco_mass_file" + ".psmtsv");
+                WriteFile.WritePsmGlycoToTsv(nglycoMass, nglycoMass_write, 3);
+                FinishedWritingFile(nglycoMass_write, new List<string> { taskId });
+
+         
+
                 return MyTaskResults;
             }
             else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
@@ -65,6 +75,52 @@ namespace TaskLayer
                 var protein_oglyco_localization_file = Path.Combine(OutputFolder, "protein_oglyco_localization" + ".tsv");
                 WriteFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
                 FinishedWritingFile(protein_oglyco_localization_file, new List<string> { taskId });
+
+                //new
+                /*
+                var oglycoMass = allPsms.Where(p => p.Routes != null).OrderByDescending(p => p.ScanPrecursorMass).ToList();
+                SingleFDRAnalysis(oglycoMass, commonParameters, new List<string> { taskId });
+
+                var oglycoMass_write = Path.Combine(OutputFolder, "oglyco_mass_file" + ".psmtsv");
+                WriteFile.WritePsmGlycoToTsv(oglycoMass, oglycoMass_write, 3);
+                FinishedWritingFile(oglycoMass_write, new List<string> { taskId });
+                */
+
+                var uniqueOGlycan = allPsms.Where(p => p.Routes != null).GroupBy(p => p.LocalizedGlycan).ToList();
+                //SingleFDRAnalysis(uniqueOGlycan, commonParameters, new List<string> { taskId });
+
+                //var uniqueOGlycan_write = Path.Combine(OutputFolder, "oglyco_unique_file" + ".psmtsv");
+                //WriteFile.WriteSeenProteinGlycoLocalizationUnique(uniqueOGlycan, uniqueOGlycan_write);
+                //FinishedWritingFile(uniqueOGlycan_write, new List<string> { taskId });
+
+                //new outputs
+
+                //var testOutput = allPsms.OrderByDescending(p => p.ScanPrecursorMass).ToList();
+                // SingleFDRAnalysis(testOutput, commonParameters, new List<string> { taskId });
+
+                // var writtenFileSingle1 = Path.Combine(OutputFolder, "new" + ".psmtsv");
+                // WriteFile.WritePsmGlycoToTsv(testOutput, writtenFileSingle1, 1);
+                //FinishedWritingFile(writtenFileSingle1, new List<string> { taskId });
+
+                //GlycoPepMix_35trig_EThcD35_Glycans - glycan, mass, site type, localized, #unique seq localized, localized uniprot IDs, #proteinds localized, #unique seq all, all uniprot IDs, #proteins all
+                //var testOutput = allPsms.Where(p => p.Routes != null).OrderByDescending(p => p.ScanPrecursorMass)
+                // .Select(p => new { p.LocalizedGlycan, p.ScanPrecursorMass, p.LocalizationLevel, p.BaseSequence, p.LocalizedScores}).ToList();
+                //SingleFDRAnalysis(testOutput, commonParameters, new List<string> { taskId });
+
+                //var writtenFileSingle1 = Path.Combine(OutputFolder, "new" + ".psmtsv");
+                //WriteFile.WritePsmGlycoToTsv(testOutput, writtenFileSingle1, 1);
+                //FinishedWritingFile(writtenFileSingle1, new List<string> { taskId });
+
+                var glyco_mass_file = Path.Combine(OutputFolder, "glyco_mass_file" + ".tsv");
+                WriteFile.GlycoMassSummaryTSV(ProteinLevelLocalization, glyco_mass_file);
+                FinishedWritingFile(glyco_mass_file, new List<string> { taskId });
+
+
+
+
+
+
+
 
                 return MyTaskResults;
             }
