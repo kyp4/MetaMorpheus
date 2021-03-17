@@ -626,6 +626,8 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                
+
+
                 output.WriteLine("UniprotID\tDescription\tInUniprotAsGlycoProtein\tPSMsLocalized\tUniqPepsLocalized\tUniqSeqLocalized\tGlycoSitesLocalized\tNsitesLocalized\tOsitesLocalized\t#LocalizedGlycans\tLocalizedGlycans");
                 foreach (var glycoProtId in glycoProtIds.OrderBy(p => p))
                 {
