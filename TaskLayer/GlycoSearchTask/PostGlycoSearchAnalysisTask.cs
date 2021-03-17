@@ -86,7 +86,8 @@ namespace TaskLayer
                 FinishedWritingFile(oglycoMass_write, new List<string> { taskId });
                 */
 
-                var uniqueOGlycan = allPsms.Where(p => p.Routes != null).GroupBy(p => p.LocalizedGlycan).ToList();
+                //group psms by unique glycan
+                //var uniqueOGlycan = allPsms.Where(p => p.Routes != null).GroupBy(p => p.LocalizedGlycan).ToList();
                 //SingleFDRAnalysis(uniqueOGlycan, commonParameters, new List<string> { taskId });
 
                 //var uniqueOGlycan_write = Path.Combine(OutputFolder, "oglyco_unique_file" + ".psmtsv");
@@ -111,14 +112,205 @@ namespace TaskLayer
                 //WriteFile.WritePsmGlycoToTsv(testOutput, writtenFileSingle1, 1);
                 //FinishedWritingFile(writtenFileSingle1, new List<string> { taskId });
 
-                var glyco_mass_file = Path.Combine(OutputFolder, "glyco_mass_file" + ".tsv");
-                WriteFile.GlycoMassSummaryTSV(ProteinLevelLocalization, glyco_mass_file);
-                FinishedWritingFile(glyco_mass_file, new List<string> { taskId });
+                //var glyco_mass_file = Path.Combine(OutputFolder, "glyco_mass_file" + ".tsv");
+                //WriteFile.GlycoMassSummaryTSV(ProteinLevelLocalization, glyco_mass_file);
+                //FinishedWritingFile(glyco_mass_file, new List<string> { taskId });
+
+                /*
+                //Unique O-Glycan Output
+                var localizedGlycanPsms = allPsmsGly.Where(p => p.LocalizedGlycan != null && !p.IsDecoy).ToList();
+                //localizedGlycanPsms[1].GlycanScore
 
 
+                List<int> glycanIds = new List<int>();
+                foreach (GlycoSpectralMatch gsm in localizedGlycanPsms)
+                {
+                    foreach (Tuple<int, int, bool> glycanId in gsm.LocalizedGlycan)
+                    {
+                        if (glycanId.Item3 == true)
+                        {
+                            glycanIds.Add(glycanId.Item2);
+                        }
+                    }
+                }
+                glycanIds = glycanIds.Distinct().OrderBy(i => i).ToList();
+                Dictionary<int, List<GlycoSpectralMatch>> glycanOutDictionary = new Dictionary<int, List<GlycoSpectralMatch>>();
+                Dictionary<int, List<string>> glycanSequencesDictionary = new Dictionary<int, List<string>>();
+                Dictionary<int, List<string>> glycanProteinOutDictionary = new Dictionary<int, List<string>>();
+                foreach (int glycanId in glycanIds)
+                {
+                    List<GlycoSpectralMatch> gsmsWithId = new List<GlycoSpectralMatch>();
+                    gsmsWithId = localizedGlycanPsms.Where(g => g.LocalizedGlycan.Any(p => p.Item2 == glycanId && p.Item3 == true)).ToList();
+                    glycanOutDictionary.Add(glycanId, gsmsWithId);
+                    glycanSequencesDictionary.Add(glycanId, gsmsWithId.Select(s => s.BaseSequence).Distinct().OrderBy(b => b).ToList());
+                    glycanProteinOutDictionary.Add(glycanId, gsmsWithId.Select(p => p.ProteinAccession).Distinct().OrderBy(a => a).ToList());
+                }
+                //End Unique O-Glycan Output
+
+                var unique_oglyco_localization_file = Path.Combine(OutputFolder, "unique_oglyco_localization" + ".tsv");
+                WriteFile.WriteUniqueGlyco(glycanOutDictionary, glycanSequencesDictionary, glycanProteinOutDictionary, unique_oglyco_localization_file);
+                FinishedWritingFile(unique_oglyco_localization_file, new List<string> { taskId });
+
+                var unique_oglyco_localization_file2 = Path.Combine(OutputFolder, "unique_oglyco_localization2" + ".tsv");
+                WriteFile.WriteUniqueGlyco2(localizedGlycanPsms, unique_oglyco_localization_file2);
+                FinishedWritingFile(unique_oglyco_localization_file2, new List<string> { taskId });
+
+                */
+
+                //GlycoPepMix_35trig_EThcD35_Glycans
+                var nonDecoyGlycanPsms = allPsmsGly.Where(p => p.LocalizedGlycan != null && !p.IsDecoy).ToList();
+                //localizedGlycanPsms[1].GlycanScore
 
 
+                List<int> glycanIds = new List<int>();
+                List<int> glycanIdsLocalized = new List<int>();
+                foreach (GlycoSpectralMatch gsm in nonDecoyGlycanPsms)
+                {
+                    foreach (Tuple<int, int, bool> glycanId in gsm.LocalizedGlycan)
+                    {
+                 
+                         glycanIds.Add(glycanId.Item2);
 
+                        if (glycanId.Item3 == true)
+                        {
+                            glycanIdsLocalized.Add(glycanId.Item2);
+                        }
+                    }
+                }
+                glycanIds = glycanIds.Distinct().OrderBy(i => i).ToList();
+                Dictionary<int, List<GlycoSpectralMatch>> glycanOutDictionary = new Dictionary<int, List<GlycoSpectralMatch>>();         
+                Dictionary<int, List<string>> glycanProteinOutDictionary = new Dictionary<int, List<string>>();
+                Dictionary<int, List<string>> glycanSequencesDictionary = new Dictionary<int, List<string>>();
+                Dictionary<int, List<string>> glycanLocalizedDictionary = new Dictionary<int, List<string>>();
+
+                //Dictionary<int, List<string>> glycanNameDictionary = new Dictionary<int, List<string>>();
+
+                Dictionary<int, List<GlycoSpectralMatch>> glycanLocalizedOutDictionary = new Dictionary<int, List<GlycoSpectralMatch>>();
+                Dictionary<int, List<string>> glycanLocalizedProteinOutDictionary = new Dictionary<int, List<string>>();
+                Dictionary<int, List<string>> glycanLocalizedSequencesDictionary = new Dictionary<int, List<string>>();
+
+                foreach (int glycanId in glycanIds)
+                {
+                    List<GlycoSpectralMatch> gsmsWithId = new List<GlycoSpectralMatch>();
+                    gsmsWithId = nonDecoyGlycanPsms.Where(g => g.LocalizedGlycan.Any(p => p.Item2 == glycanId)).ToList();
+                    glycanOutDictionary.Add(glycanId, gsmsWithId);
+                    glycanProteinOutDictionary.Add(glycanId, gsmsWithId.Select(p => p.ProteinAccession).Distinct().OrderBy(a => a).ToList());
+                    glycanSequencesDictionary.Add(glycanId, gsmsWithId.Select(s => s.BaseSequence).Distinct().OrderBy(b => b).ToList());
+
+                    //glycanNameDictionary.Add(glycanId, gsmsWithId.Select(s => s.LocalizedGlycan).Distinct().OrderBy(b => b).ToList());
+
+
+                    // glycanSequencesDictionary.Add(glycanId, gsmsWithId.Select(s => s.LocalizedGlycan.Any(predicate.)).Distinct().OrderBy(b => b).ToList());
+
+                }
+                
+                foreach (int glycanIdLocalized in glycanIdsLocalized.Distinct())
+                {
+                    List<GlycoSpectralMatch> gsmsWithIdLocalized = new List<GlycoSpectralMatch>();
+                    gsmsWithIdLocalized = nonDecoyGlycanPsms.Where(g => g.LocalizedGlycan.Any(p => p.Item2 == glycanIdLocalized && p.Item3 == true)).ToList();
+                    glycanLocalizedOutDictionary.Add(glycanIdLocalized, gsmsWithIdLocalized);
+                    glycanLocalizedProteinOutDictionary.Add(glycanIdLocalized, gsmsWithIdLocalized.Select(p => p.ProteinAccession).Distinct().OrderBy(a => a).ToList());
+                    glycanLocalizedSequencesDictionary.Add(glycanIdLocalized, gsmsWithIdLocalized.Select(s => s.BaseSequence).Distinct().OrderBy(b => b).ToList());
+                }
+
+                
+
+                var unique_oglyco_localization_file = Path.Combine(OutputFolder, "unique_oglyco_localization" + ".tsv");
+                WriteFile.WriteUniqueGlyco(glycanOutDictionary, glycanSequencesDictionary, glycanProteinOutDictionary, glycanLocalizedOutDictionary, glycanLocalizedSequencesDictionary, glycanLocalizedProteinOutDictionary, unique_oglyco_localization_file);
+                FinishedWritingFile(unique_oglyco_localization_file, new List<string> { taskId });
+
+                //Dictionary<int, List<float>> glycanMassDictionary = new Dictionary<int, List<float>>();
+
+                //GlycoPepMix_35trig_EThcD35_GlycoProteins
+                //glycanIds
+          
+                List<string> glycoProtIds = new List<string>();
+                List<string> glycoProtIdsLocalized = new List<string>();
+                foreach (GlycoSpectralMatch gsm in nonDecoyGlycanPsms)
+                {
+
+                    glycoProtIds.Add(gsm.ProteinAccession);
+
+                    //foreach (Tuple<int, int, bool> glycoProtId in gsm.LocalizedGlycan)
+                    //{
+
+                        //glycoProtIdsLocalized.Add(glycoProtId.ProteinAccession);
+
+                        // if (glycoProtId.Item3 == true)
+                        // {
+                         //    glycoProtIdsLocalized.Add(glycoProtId.ProteinAccession);
+                         //}
+                    //}
+                }
+                glycoProtIds = glycoProtIds.Distinct().OrderBy(i => i).ToList();
+                glycoProtIdsLocalized = glycoProtIdsLocalized.Distinct().OrderBy(i => i).ToList();
+                Dictionary<string, List<string>> glycoProtDescription = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtUniprotGlycoProt = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtPSMLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtUniquePepLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtUniqueSeqLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtGlycoSitesLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtNSitesLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtOSitesLocalized = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtNumLocalizedGlycans = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> glycoProtLocalizedGlycans = new Dictionary<string, List<string>>();
+               
+                Dictionary<string, List<int?>> glycoProtPSM = new Dictionary<string, List<int?>>();
+                Dictionary<string, List<double?>> glycoProtPeps = new Dictionary<string, List<double?>>();
+                Dictionary<string, List<string>> glycoProtSeq = new Dictionary<string, List<string>>();
+                Dictionary<string, List<List<Tuple<int, int, bool>>>> glycoProtGlycoSites = new Dictionary<string, List<List<Tuple<int, int, bool>>>>(); //how do I get this?
+                Dictionary<string, List<List<Glycan>>> glycoProtNSites = new Dictionary<string, List<List<Glycan>>>();
+                Dictionary<string, List<string>> glycoProtOSites = new Dictionary<string, List<string>>(); //how do I get this?
+                //Dictionary<string, List<string>> glycoProtNumGlycans = new Dictionary<string, List<string>>();
+                Dictionary<string, List<int>> glycoProtGlycans = new Dictionary<string, List<int>>();
+
+                foreach (string glycoProtId in glycoProtIds)
+                {
+                    List<GlycoSpectralMatch> gsmsWithId = new List<GlycoSpectralMatch>();
+                    //gsmsWithId = nonDecoyGlycanPsms.Where(g => g.ProteinAccession.Any(p => p.Equals(glycoProtId))).ToList();
+                    //gsmsWithId = nonDecoyGlycanPsms.Where(p => glycoProtIds.Any(q => p.ProteinAccession.Contains(q))).ToList(); // this was counting Seq that match to ALL uniprot IDs in list
+                    gsmsWithId = nonDecoyGlycanPsms.Where(g => g.ProteinAccession.Equals(glycoProtId)).ToList();
+
+                    //glycanOutDictionary.Add(glycoProtId, gsmsWithId);
+                    //glycanProteinOutDictionary.Add(glycanId, gsmsWithId.Select(p => p.ProteinAccession).Distinct().OrderBy(a => a).ToList());
+
+                    glycoProtDescription.Add(glycoProtId, gsmsWithId.Select(s => s.Organism).Distinct().OrderBy(b => b).ToList());
+
+                    glycoProtPSM.Add(glycoProtId, gsmsWithId.Select(s => s.PrecursorScanNumber).Distinct().OrderBy(b => b).ToList());
+                    glycoProtPeps.Add(glycoProtId, gsmsWithId.Select(s => s.PeptideMonisotopicMass).Distinct().OrderBy(b => b).ToList());
+                    glycoProtSeq.Add(glycoProtId, gsmsWithId.Select(s => s.BaseSequence).Distinct().OrderBy(b => b).ToList());
+                    //glycoProtGlycoSites.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan).Distinct().OrderBy(b => b).ToList());
+                    glycoProtNSites.Add(glycoProtId, gsmsWithId.Select(s => s.NGlycan).Distinct().OrderBy(b => b).ToList());
+                    //glycoProtOSites.Add(glycoProtId, gsmsWithId.Select(s => s.NGlycan).Distinct().OrderBy(b => b).ToList());
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan).Distinct().OrderBy(b => b).ToList()); //throwing an error
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan.Any(p => p.Item2)).Distinct().OrderBy(b => b).ToList());
+
+
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan.Select(p => p.Item2)).Distinct().OrderBy(b => b).ToList());
+
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan[0].Item2).Distinct().OrderBy(b => b).ToList()); //works
+
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan.Add(p => p.Item2)).Distinct().OrderBy(b => b).ToList());
+
+                    //foreach (List<Tuple<int, int, bool>> glycan in gsmsWithId.Select(s => s.LocalizedGlycan)) 
+                    //{
+                       // List<int> tempGlycoProt = new List<int>();
+                        //tempGlycoProt.Add(glycan.Item2);
+                        //glycoProtGlycans.Add(glycoProtId, glycan.Item2);
+                        
+                   // }
+
+                    
+
+
+                    //glycoProtGlycans.Add(glycoProtId, gsmsWithId.Select(s => s.LocalizedGlycan).Distinct().OrderBy(b => b).ToList());
+
+                }
+
+                var unique_glyco_prot_localization_file = Path.Combine(OutputFolder, "unique_glyco_prot_localization" + ".tsv");
+                //WriteFile.WriteUniqueGlycoProt(glycoProtIds, glycoProtDescription, glycoProtPSM, glycoProtPeps, glycoProtSeq, glycoProtNSites, glycoProtGlycans, unique_glyco_prot_localization_file);
+                WriteFile.WriteUniqueGlycoProt(glycoProtIds, glycoProtDescription, glycoProtPSM, glycoProtPeps, glycoProtSeq, glycoProtNSites, glycoProtGlycans, unique_glyco_prot_localization_file);
+                FinishedWritingFile(unique_glyco_prot_localization_file, new List<string> { taskId });
 
 
 

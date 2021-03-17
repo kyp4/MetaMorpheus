@@ -477,25 +477,6 @@ namespace TaskLayer
             }
         }
 
-        public static void WriteSeenProteinGlycoLocalizationUnique(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
-        {
-            if (glycoProteinParsimony.Count == 0)
-            { return; }
-            var writtenFile = Path.Combine(outputPath);
-            using (StreamWriter output = new StreamWriter(writtenFile))
-            {
-                output.WriteLine("Test\tTest2");
-                foreach (var item in glycoProteinParsimony.OrderBy(p => p.Key))
-                {
-                    var x = item.Key.Split('-');
-                    output.WriteLine(
-                        x[0] + "\t" +
-                        x[1]
-                        );
-                }
-            }
-        }
-
         //The function is to summarize localized glycosylation of each protein site. 
         public static void WriteProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
@@ -535,55 +516,177 @@ namespace TaskLayer
                 }
             }
 
-
-            //new output
-
             
         }
 
-        public static void GlycoMassSummaryTSV(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+
+
+        public static void WriteUniqueGlyco(Dictionary<int, List<GlycoSpectralMatch>> glycanOutDictionary, Dictionary<int, List<string>> glycanSequencesDictionary, 
+            Dictionary<int, List<string>> glycanProteinOutDictionary, Dictionary<int, List<GlycoSpectralMatch>> glycanLocalizedOutDictionary, Dictionary<int, List<string>>  glycanLocalizedSequencesDictionary,
+            Dictionary<int, List<string>> glycanLocalizedProteinOutDictionary, string outputPath)
         {
-            if (glycoProteinParsimony.Count == 0)
+            if (glycanLocalizedOutDictionary.Count == 0)
             { return; }
+
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycans\tLocalized");
-                foreach (var item in glycoProteinParsimony.OrderBy(p => p.Key))
+                /*
+                output.WriteLine("Glyco ID\t#Unique Localized Sequence\tUnique Localized Proteins\t#Unique Localized Proteins\t#Unique Sequence\tUnique Proteins\t#Unique Proteins");
+                foreach (var glycanIdLocalized in glycanLocalizedOutDictionary.OrderBy(p => p.Key))
                 {
-                    var x = item.Key.Split('-');
                     output.WriteLine(
-                        x[0] + "\t" +
-                        x[1] + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
-                        item.Value.IsLocalized +
-                        item.Value.ProteinAccession
-                        );
+                        glycanIdLocalized.Key + "\t" +
+                        //String.Join(";", glycanSequencesDictionary[glycoID.Key]) + "\t" +
+                        //glycanLocalizedSequencesDictionary[glycoID.Key].Count() + "\t" +
+                        //String.Join(";", glycanLocalizedProteinOutDictionary[glycoID.Key]) + "\t" +
+                        //glycanLocalizedProteinOutDictionary[glycoID.Key].Count() +"\t" +
+                        glycanLocalizedSequencesDictionary[glycanIdLocalized.Key].Count() +"\t" +
+                        String.Join(";", glycanLocalizedProteinOutDictionary[glycanIdLocalized.Key]) + "\t" +
+                        glycanLocalizedProteinOutDictionary[glycanIdLocalized.Key].Count());
+
+                    //glycanSequencesDictionary[glycoID.Key].Count() + "\t" +
+                    //String.Join(";", glycanProteinOutDictionary[glycoID.Key]) + "\t" +
+                    // glycanProteinOutDictionary[glycoID.Key].Count());
                 }
+                */
+                output.WriteLine("Glyco ID\t#Unique Localized   `Sequence\tUnique Localized Proteins\t#Unique Localized Proteins\t#Unique Sequence\tUnique Proteins\t#Unique Proteins");
+                foreach (var glycoID in glycanOutDictionary.OrderBy(p => p.Key))
+                {
+                    if (glycanLocalizedOutDictionary.ContainsKey(glycoID.Key)) 
+                    {
+                        output.WriteLine(
+                             glycoID.Key + "\t" +
+
+                            glycanLocalizedSequencesDictionary[glycoID.Key].Count() + "\t" +
+                            String.Join(";", glycanLocalizedProteinOutDictionary[glycoID.Key]) + "\t" +
+                            glycanLocalizedProteinOutDictionary[glycoID.Key].Count() + "\t" +
+
+                            glycanSequencesDictionary[glycoID.Key].Count() + "\t" +
+                            String.Join(";", glycanProteinOutDictionary[glycoID.Key]) + "\t" +
+                            glycanProteinOutDictionary[glycoID.Key].Count());
+
+                    }
+                    else
+                    {
+
+                        output.WriteLine(
+                             glycoID.Key + "\t" +
+
+                            glycanSequencesDictionary[glycoID.Key].Count() + "\t" +
+                            String.Join(";", glycanProteinOutDictionary[glycoID.Key]) + "\t" +
+                            glycanProteinOutDictionary[glycoID.Key].Count());
+
+                    }
+
+
+                   
+                }
+
             }
-        }
-      /*
-        public static void GlycoUniqueSummaryTSV(List<var> psmList, string outputPath)
-        {
-            if (psmList.Count == 0)
+
+            /*
+            if (glycanOutDictionary.Count == 0)
             { return; }
+
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                output.WriteLine("Protein Accession\tModification Site\tLocalized Glycans\tLocalized");
-                foreach (var item in psmList.OrderBy(p => p.Key))
+                output.WriteLine("Glyco ID\t#Unique Localized Sequence\tUnique Localized Proteins\t#Unique Localized Proteins\t#Unique Sequence\tUnique Proteins\t#Unique Proteins");
+                foreach (var glycoID in glycanOutDictionary.OrderBy(p => p.Key))
                 {
-                    var x = item.Key.Split('-');
                     output.WriteLine(
-                        x[0] + "\t" +
-                        x[1] + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
-                        item.Value.IsLocalized
+                        glycoID.Key + "\t" +
+                      
+                        glycanSequencesDictionary[glycoID.Key].Count() + "\t" +
+                        String.Join(";", glycanProteinOutDictionary[glycoID.Key]) + "\t" +
+                        glycanProteinOutDictionary[glycoID.Key].Count());
+                }
+
+            }
+            */
+
+
+        }
+        //Dictionary<int, List<GlycoSpectralMatch>> glycanOutDictionary
+        public static void WriteUniqueGlycoProt(List<string> glycoProtIds, Dictionary<string, List<string>> glycoProtDescription,
+            Dictionary<string, List<int?>> glycoProtPSM, Dictionary<string, List<double?>> glycoProtPeps, 
+            Dictionary<string, List<string>> glycoProtSeq, Dictionary<string, List<List<Glycan>>> glycoProtNSites,
+            Dictionary<string, List<int>> glycoProtGlycans,
+             string outputPath)
+            //(List<string> glycoProtIds, Dictionary<string, List<string>> glycoProtDescription,
+            //Dictionary<string, List<int?>> glycoProtPSM, Dictionary<string, List<double?>> glycoProtPeps, 
+            //Dictionary<string, List<string>> glycoProtSeq,
+            //Dictionary<string, List<List<Glycan>>> glycoProtNSites, Dictionary<string, List<List<Tuple<int, int, bool>>>> glycoProtGlycans, string outputPath)
+        {
+            if (glycoProtIds.Count == 0)
+            { return; }
+
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+               
+                output.WriteLine("UniprotID\tDescription\tInUniprotAsGlycoProtein\tPSMsLocalized\tUniqPepsLocalized\tUniqSeqLocalized\tGlycoSitesLocalized\tNsitesLocalized\tOsitesLocalized\t#LocalizedGlycans\tLocalizedGlycans");
+                foreach (var glycoProtId in glycoProtIds.OrderBy(p => p))
+                {
+                    //if (glycanLocalizedOutDictionary.ContainsKey(glycoID.Key))
+                    //{
+                    output.WriteLine(
+                         glycoProtId + "\t" +
+                         String.Join(";", glycoProtDescription[glycoProtId]) + "\t" +
+
+                         glycoProtPSM[glycoProtId].Count() + "\t" +
+                         glycoProtPeps[glycoProtId].Count() + "\t" +
+                         glycoProtSeq[glycoProtId].Count() + "\t" +
+                         //glycoProtGlycoSites[glycoProtId].Count() + "\t" +
+
+                         glycoProtNSites[glycoProtId].Count() + "\t" +
+                            // String.Join(";", glycoProtGlycans[glycoProtId]) + "\t" +
+                         glycoProtGlycans[glycoProtId].Count());
+
+
+                    // }
+                    //else
+                    //{
+
+                    // output.WriteLine(
+                    // glycoID.Key + "\t" +
+
+
+
+                    // }
+
+
+
+                }
+
+            }
+
+        }
+
+
+            public static void WriteUniqueGlyco2(List<GlycoSpectralMatch> items, string outputPath)
+        {
+            if (items.Count == 0)
+            { return; }
+
+            var writtenFile = Path.Combine(outputPath);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                output.WriteLine("Glycan\tProtein Accession");
+                foreach (var item in items)
+                {
+                   
+                    output.WriteLine(
+                        String.Join(";", item.LocalizedGlycan) + "\t" +
+                        item.ProteinAccession
                         );
                 }
             }
+
+
         }
-      */
+
 
 
     }
